@@ -1,34 +1,57 @@
 {% extends "app/base.html" %}
+{% load widget_tweaks %}
 
 {% block content %}
 
-<h4 class="mb-3">API制限回数：<span class="text-danger">{{ limit }}</span></h4>
-
-{% for index, row in tweet_data.iterrows %}
-<div class="card mb-2">
-    <div class="card-body">
-        <div class="d-flex align-items-center mb-2">
-            <img src="{{ row.profile_image_url }}" class="rounded-circle mr-3" alt="icon">
-            <span><b>{{ row.name }}</b></span>
-            <span>@{{ row.screen_name }}</span>
-        </div>
-        {% if row.media_url %}
-            <img src="{{ row.media_url }}" class="media-img" alt="media">
-        {% endif %}
-        <p>{{ row.full_text|linebreaksbr }}</p>
-        <div class="d-flex align-items-center mb-2">
-            <div class="mr-3">
-                <i class="fas fa-retweet"></i>
-                <span>: {{ row.retweet_count }}</span>
-            </div>
-            <div>
-                <i class="far fa-heart"></i>
-                <span>: {{ row.favorite_count }}</span>
-            </div>
-        </div>
-        <div>{{ row.created_at }}</div>
-    </div>
+<div class="my-4">
+    <h2>キーワード検索</h2>
 </div>
-{% endfor %}
+
+<div class="table-responsive search-table">
+    <table class="table">
+        <form method="post">
+            {% csrf_token %}
+            <tbody>
+                <tr>
+                    <th scope="row">
+                        <label class="control-label" for="comment">検索キーワード</label>
+                    </th>
+                    <td>
+                        {% render_field form.keyword class="form-control" placeholder="キーワードを入力" %}
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">
+                        <label class="control-label" for="comment">いいね、リツイート数</label>
+                    </th>
+                    <td>
+                        {% render_field form.count class="form-control" placeholder="いいね、リツイート数" %}
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">
+                        <label class="control-label" for="comment">検索開始日</label>
+                    </th>
+                    <td>
+                        {% render_field form.search_start class="form-control" placeholder="検索開始日" %}
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">
+                        <label class="control-label" for="comment">いいね、リツイート数</label>
+                    </th>
+                    <td>
+                        {% render_field form.search_end class="form-control" placeholder="いいね、リツイート数" %}
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="text-center">
+                        <button class="btn btn-warning" type="submit">検索する</button>
+                    </td>
+                </tr>
+            </tbody>
+        </form>
+    </table>
+</div>
 
 {% endblock %}

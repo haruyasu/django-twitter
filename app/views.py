@@ -1,11 +1,10 @@
 from django.views.generic import View
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.conf import settings
-from requests_oauthlib import OAuth1Session
+from .forms import TweetForm
 import tweepy
 import pandas as pd
-import datetime
-import json
+from datetime import datetime, timedelta
 
 # Twitter API認証
 TWEEPY_AUTH = tweepy.OAuthHandler(settings.CONSUMER_KEY, settings.CONSUMER_SECRET)
@@ -43,7 +42,7 @@ def get_search_tweet(s, items_count, rlcount, since, until):
         # いいねとリツイートの合計がrlcuont以上の条件
         if tweet.favorite_count + tweet.retweet_count >= rlcount:
             # UTC時間なので日本時間に直すために9時間プラス
-            tweet.created_at += datetime.timedelta(hours=9)
+            tweet.created_at += timedelta(hours=9)
             created_at = tweet.created_at.strftime('%Y-%m-%d %H:%M')
 
             # メディアがある場合とない場合
@@ -129,14 +128,38 @@ def make_df(data):
 
 class IndexView(View):
     def get(self, request, *args, **kwargs):
+        form = TweetForm(
+            request.POST or None,
+            initial={
+                'count': 1,
+                'search_start': datetime.today() - timedelta(days=7),
+                'search_end': datetime.today(),
+            }
+        )
+
+        return render(request, 'app/index.html', {
+            'form': form
+        })
+
+    def post(self, request, *args, **kwargs):
         # キーワード検索して、いいね、ツイートが多いものを表示
         # ユーザーで検索して、ツイートをいいね、リツイートが多いものを表示
 
-        data = get_search_tweet('#デイトラ', 20, 1, "2020-11-01_00:00:00_JST", "2020-11-08_00:00:00_JST")
-        tweet_data = make_df(data)
-        limit = TWEEPY_API.last_response.headers['x-rate-limit-remaining']
+        form = TweetForm(request.POST or None)
 
-        return render(request, 'app/index.html', {
-            'tweet_data': tweet_data,
-            'limit': limit
-        })
+        if form.is_valid():
+            keyword = form.cleaned_data['keyword']
+            count = form.cleaned_data['count']
+            search_start = form.cleaned_data['search_start']
+            search_end = form.cleaned_data['search_end']
+
+            data = get_search_tweet(keyword, 20, int(count), search_start, search_end)
+            tweet_data = make_df(data)
+            limit = TWEEPY_API.last_response.headers['x-rate-limit-remaining']
+
+            return render(request, 'app/tweet.html', {
+                'tweet_data': tweet_data,
+                'limit': limit
+            })
+        else:
+            return redirect('index')

@@ -3,3 +3,5 @@ django-widget-tweaks~=1.4.8
 django-allauth~=0.41.0
 requests~=2.24.0
 django-environ~=0.4.5
+tweepy~=3.9.0
+pandas~=1.1.3

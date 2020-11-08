@@ -2,6 +2,33 @@
 
 {% block content %}
 
-<p>test</p>
+<h4 class="mb-3">API制限回数：<span class="text-danger">{{ limit }}</span></h4>
+
+{% for index, row in tweet_data.iterrows %}
+<div class="card mb-2">
+    <div class="card-body">
+        <div class="d-flex align-items-center mb-2">
+            <img src="{{ row.profile_image_url }}" class="rounded-circle mr-3" alt="icon">
+            <span><b>{{ row.name }}</b></span>
+            <span>@{{ row.screen_name }}</span>
+        </div>
+        {% if row.media_url %}
+            <img src="{{ row.media_url }}" class="media-img" alt="media">
+        {% endif %}
+        <p>{{ row.full_text|linebreaksbr }}</p>
+        <div class="d-flex align-items-center mb-2">
+            <div class="mr-3">
+                <i class="fas fa-retweet"></i>
+                <span>: {{ row.retweet_count }}</span>
+            </div>
+            <div>
+                <i class="far fa-heart"></i>
+                <span>: {{ row.favorite_count }}</span>
+            </div>
+        </div>
+        <div>{{ row.created_at }}</div>
+    </div>
+</div>
+{% endfor %}
 
 {% endblock %}

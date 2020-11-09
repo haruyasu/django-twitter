@@ -131,7 +131,8 @@ class IndexView(View):
         form = TweetForm(
             request.POST or None,
             initial={
-                'count': 1,
+                'items_count': 100,
+                'rlcount': 1,
                 'search_start': datetime.today() - timedelta(days=7),
                 'search_end': datetime.today(),
             }
@@ -149,11 +150,12 @@ class IndexView(View):
 
         if form.is_valid():
             keyword = form.cleaned_data['keyword']
-            count = form.cleaned_data['count']
+            items_count = form.cleaned_data['items_count']
+            rlcount = form.cleaned_data['rlcount']
             search_start = form.cleaned_data['search_start']
             search_end = form.cleaned_data['search_end']
 
-            data = get_search_tweet(keyword, 20, int(count), search_start, search_end)
+            data = get_search_tweet(keyword, items_count, rlcount, search_start, search_end)
             tweet_data = make_df(data)
             limit = TWEEPY_API.last_response.headers['x-rate-limit-remaining']
 

@@ -22,10 +22,18 @@
                 </tr>
                 <tr>
                     <th scope="row">
+                        <label class="control-label" for="comment">検索数</label>
+                    </th>
+                    <td>
+                        {% render_field form.items_count class="form-control" placeholder="検索数" %}
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">
                         <label class="control-label" for="comment">いいね、リツイート数</label>
                     </th>
                     <td>
-                        {% render_field form.count class="form-control" placeholder="いいね、リツイート数" %}
+                        {% render_field form.rlcount class="form-control" placeholder="いいね、リツイート数" %}
                     </td>
                 </tr>
                 <tr>
@@ -38,10 +46,10 @@
                 </tr>
                 <tr>
                     <th scope="row">
-                        <label class="control-label" for="comment">いいね、リツイート数</label>
+                        <label class="control-label" for="comment">検索終了日</label>
                     </th>
                     <td>
-                        {% render_field form.search_end class="form-control" placeholder="いいね、リツイート数" %}
+                        {% render_field form.search_end class="form-control" placeholder="検索終了日" %}
                     </td>
                 </tr>
                 <tr>

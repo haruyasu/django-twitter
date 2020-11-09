@@ -2,9 +2,11 @@ from django.views.generic import View
 from django.shortcuts import render, redirect
 from django.conf import settings
 from .forms import TweetForm
+from datetime import datetime, timedelta
 import tweepy
 import pandas as pd
-from datetime import datetime, timedelta
+import json
+
 
 # Twitter API認証
 TWEEPY_AUTH = tweepy.OAuthHandler(settings.CONSUMER_KEY, settings.CONSUMER_SECRET)
@@ -38,12 +40,34 @@ def get_search_tweet(s, items_count, rlcount, since, until):
 
     # ツイートのデータを取り出して、リストにまとめていく部分
     tweet_data = []  # ツイートデータを入れる空のリストを用意
+    favorite_data = {}
+    retweet_data = {}
+    post_data = {}
+    date_tmp = ''
+    favorite_data_count = 0
+    retweet_data_count = 0
+    post_data_count = 0
     for tweet in tweets:
         # いいねとリツイートの合計がrlcuont以上の条件
         if tweet.favorite_count + tweet.retweet_count >= rlcount:
             # UTC時間なので日本時間に直すために9時間プラス
             tweet.created_at += timedelta(hours=9)
             created_at = tweet.created_at.strftime('%Y-%m-%d %H:%M')
+
+            # 日付ごとにいいねとリツイート数の合計を計算
+            date = tweet.created_at.strftime('%Y-%m-%d')
+            if date_tmp == date:
+                favorite_data_count += tweet.favorite_count
+                retweet_data_count += tweet.retweet_count
+                post_data_count += 1
+            else:
+                date_tmp = date
+                favorite_data_count = tweet.favorite_count
+                retweet_data_count = tweet.retweet_count
+                post_data_count = 1
+            favorite_data[date] = favorite_data_count
+            retweet_data[date] = retweet_data_count
+            post_data[date] = post_data_count
 
             # メディアがある場合とない場合
             try:
@@ -62,7 +86,8 @@ def get_search_tweet(s, items_count, rlcount, since, until):
                 tweet.favorite_count, # いいね数
                 created_at, # ツイート日
             ])
-    return tweet_data
+
+    return tweet_data, favorite_data, retweet_data, post_data
 
 
 def make_df(data):
@@ -156,12 +181,26 @@ class IndexView(View):
             search_end = form.cleaned_data['search_end']
 
             data = get_search_tweet(keyword, items_count, rlcount, search_start, search_end)
-            tweet_data = make_df(data)
+            tweet_data = data[0]
+            favorite_data = data[1]
+            retweet_data = data[2]
+            post_data = data[3]
+
+            graph_data = {
+                'date': list(favorite_data.keys()),
+                'favorite_data': list(favorite_data.values()),
+                'retweet_data': list(retweet_data.values()),
+                'post_data': list(post_data.values()),
+            }
+
+            tweet_data = make_df(tweet_data)
             limit = TWEEPY_API.last_response.headers['x-rate-limit-remaining']
 
             return render(request, 'app/tweet.html', {
+                'keyword': keyword,
                 'tweet_data': tweet_data,
-                'limit': limit
+                'limit': limit,
+                'graph_data': json.dumps(graph_data),
             })
         else:
             return redirect('index')

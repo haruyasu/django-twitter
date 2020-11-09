@@ -39,7 +39,9 @@ def get_search_tweet(s, items_count, rlcount, since, until):
     ).items(items_count)
 
     # ツイートのデータを取り出して、リストにまとめていく部分
-    tweet_data = []  # ツイートデータを入れる空のリストを用意
+    # ツイートデータを入れる空のリストを用意
+    tweet_data = []
+    # 日付ごとにデータの合計を格納する
     favorite_data = {}
     retweet_data = {}
     post_data = {}
@@ -54,7 +56,7 @@ def get_search_tweet(s, items_count, rlcount, since, until):
             tweet.created_at += timedelta(hours=9)
             created_at = tweet.created_at.strftime('%Y-%m-%d %H:%M')
 
-            # 日付ごとにいいねとリツイート数の合計を計算
+            # 日付ごとにいいねとリツイート数、投稿数の合計を計算
             date = tweet.created_at.strftime('%Y-%m-%d')
             if date_tmp == date:
                 favorite_data_count += tweet.favorite_count
@@ -65,6 +67,7 @@ def get_search_tweet(s, items_count, rlcount, since, until):
                 favorite_data_count = tweet.favorite_count
                 retweet_data_count = tweet.retweet_count
                 post_data_count = 1
+            # 辞書型なので、同じキーはアップデートされる
             favorite_data[date] = favorite_data_count
             retweet_data[date] = retweet_data_count
             post_data[date] = post_data_count
@@ -153,13 +156,15 @@ def make_df(data):
 
 class IndexView(View):
     def get(self, request, *args, **kwargs):
+        # 検索フォーム
         form = TweetForm(
             request.POST or None,
+            # フォームに初期値を設定
             initial={
-                'items_count': 100,
-                'rlcount': 1,
-                'search_start': datetime.today() - timedelta(days=7),
-                'search_end': datetime.today(),
+                'items_count': 100, # 検索数
+                'rlcount': 1, # いいねリツイート合計数
+                'search_start': datetime.today() - timedelta(days=7), # 一週間前
+                'search_end': datetime.today(), # 本日
             }
         )
 
@@ -169,23 +174,25 @@ class IndexView(View):
 
     def post(self, request, *args, **kwargs):
         # キーワード検索して、いいね、ツイートが多いものを表示
-        # ユーザーで検索して、ツイートをいいね、リツイートが多いものを表示
-
         form = TweetForm(request.POST or None)
 
+        # フォームのバリデーション
         if form.is_valid():
+            # フォームからデータを取得
             keyword = form.cleaned_data['keyword']
             items_count = form.cleaned_data['items_count']
             rlcount = form.cleaned_data['rlcount']
             search_start = form.cleaned_data['search_start']
             search_end = form.cleaned_data['search_end']
 
+            # ツイート検索
             data = get_search_tweet(keyword, items_count, rlcount, search_start, search_end)
             tweet_data = data[0]
             favorite_data = data[1]
             retweet_data = data[2]
             post_data = data[3]
 
+            # グラフデータをまとめる
             graph_data = {
                 'date': list(favorite_data.keys()),
                 'favorite_data': list(favorite_data.values()),
@@ -193,7 +200,10 @@ class IndexView(View):
                 'post_data': list(post_data.values()),
             }
 
+            # ツイートデータをデータフレーム化する
             tweet_data = make_df(tweet_data)
+
+            # API使用制限取得
             limit = TWEEPY_API.last_response.headers['x-rate-limit-remaining']
 
             return render(request, 'app/tweet.html', {
@@ -203,4 +213,5 @@ class IndexView(View):
                 'graph_data': json.dumps(graph_data),
             })
         else:
+            # バリデーションが失敗した場合はトップページへ
             return redirect('index')

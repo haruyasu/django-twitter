@@ -22,7 +22,7 @@
             <span>@{{ row.screen_name }}</span>
         </div>
         {% if row.media_url %}
-        <img src="{{ row.media_url }}" class="media-img" alt="media">
+            <img src="{{ row.media_url }}" class="media-img" alt="media">
         {% endif %}
         <p>{{ row.full_text|linebreaksbr }}</p>
         <div class="d-flex align-items-center mb-2">
